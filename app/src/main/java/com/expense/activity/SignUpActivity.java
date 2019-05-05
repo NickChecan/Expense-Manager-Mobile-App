@@ -1,5 +1,6 @@
 package com.expense.activity;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
@@ -10,11 +11,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.expense.R;
+import com.expense.interceptor.AuthorizationInterceptor;
 import com.expense.model.User;
 import com.expense.service.AccessService;
 
 import java.util.regex.Pattern;
 
+import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -33,6 +36,8 @@ public class SignUpActivity extends AppCompatActivity {
 
     private TextView signInText;
 
+    private ProgressDialog progress;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -47,6 +52,8 @@ public class SignUpActivity extends AppCompatActivity {
 
         // Set back button at the application toolbar
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        progress = new ProgressDialog(this);
 
         // Set SignUp button event
         signUpButton.setOnClickListener(new View.OnClickListener() {
@@ -94,7 +101,7 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
     /*
-     * Regex explanations for password validation
+     * Regex explanations for password validation:
      * (?=.*[0-9]) A digit must occur at least once
      * (?=.*[a-z]) A lower case letter must occur at least once
      * (?=.*[A-Z]) An upper case letter must occur at least once
@@ -115,6 +122,8 @@ public class SignUpActivity extends AppCompatActivity {
 
     private void signUp() {
 
+        displayLoading("Wait while we sign you up...");
+
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("http://10.0.2.2:8080/") // Cannot be localhost due to the virtual machine
                 .addConverterFactory(JacksonConverterFactory.create())
@@ -132,6 +141,9 @@ public class SignUpActivity extends AppCompatActivity {
         httpRequest.enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call call, Response response) {
+
+                dismissLoading();
+
                 if (response.isSuccessful()) {
                     Toast.makeText(getApplicationContext(),
                             "User successfully created.", Toast.LENGTH_LONG).show();
@@ -144,11 +156,24 @@ public class SignUpActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call call, Throwable t) {
+                dismissLoading();
                 Toast.makeText(getApplicationContext(),
                         "Error in the user creation.", Toast.LENGTH_LONG).show();
             }
         });
 
+    }
+
+    public void displayLoading(String loadingMessage) {
+        progress.setTitle("Signing Up...");
+        progress.setMessage(loadingMessage);
+        progress.setCancelable(false); // disable dismiss by tapping outside of the dialog
+        progress.show();
+    }
+
+    public void dismissLoading() {
+        // Dismiss the loading dialog
+        progress.dismiss();
     }
 
 }

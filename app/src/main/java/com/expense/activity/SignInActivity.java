@@ -1,5 +1,6 @@
 package com.expense.activity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -34,6 +35,8 @@ public class SignInActivity extends AppCompatActivity {
 
     AuthenticationManager authentication;
 
+    private ProgressDialog progress;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -50,6 +53,8 @@ public class SignInActivity extends AppCompatActivity {
 
         // Remove top bar application
         getSupportActionBar().hide();
+
+        progress = new ProgressDialog(this);
 
         // Call Sign Up activity
         signUpText.setOnClickListener(new View.OnClickListener() {
@@ -72,6 +77,8 @@ public class SignInActivity extends AppCompatActivity {
 
     private void signIn() {
 
+        displayLoading("Wait while sign in...");
+
         OkHttpClient client = new OkHttpClient.Builder()
                 .addInterceptor(new AuthorizationInterceptor("client", "123"))
                 .build();
@@ -93,6 +100,8 @@ public class SignInActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<TokenResponse> call, Response<TokenResponse> response) {
 
+                dismissLoading();
+
                 if (response.isSuccessful()) {
 
                     // Set token at the shared preferences
@@ -113,12 +122,25 @@ public class SignInActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<TokenResponse> call, Throwable t) {
+                dismissLoading();
                 Toast.makeText(getApplicationContext(),
                         "Invalid credentials.", Toast.LENGTH_LONG).show();
             }
 
         });
 
+    }
+
+    public void displayLoading(String loadingMessage) {
+        progress.setTitle("Signing In");
+        progress.setMessage(loadingMessage);
+        progress.setCancelable(false); // disable dismiss by tapping outside of the dialog
+        progress.show();
+    }
+
+    public void dismissLoading() {
+        // Dismiss the loading dialog
+        progress.dismiss();
     }
 
 }
