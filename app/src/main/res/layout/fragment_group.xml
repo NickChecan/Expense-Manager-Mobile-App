@@ -7,9 +7,28 @@
     android:layout_height="match_parent"
     tools:context="com.expense.fragment.GroupFragment">
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/addGroupFloatingButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/groupListViewId"
+        android:layout_alignBottom="@id/groupListViewId"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginStart="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="75dp"
+        android:clickable="true"
+        android:src="@drawable/ic_add_white_24dp"
+        android:focusable="true" />
+
     <ListView
         android:id="@+id/groupListViewId"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:clickable="false" />
 
 </RelativeLayout>

@@ -11,13 +11,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.expense.R;
-import com.expense.interceptor.AuthorizationInterceptor;
 import com.expense.model.User;
 import com.expense.service.AccessService;
 
 import java.util.regex.Pattern;
 
-import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
