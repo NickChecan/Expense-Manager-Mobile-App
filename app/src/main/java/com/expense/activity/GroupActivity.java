@@ -2,8 +2,8 @@ package com.expense.activity;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,21 +13,16 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.expense.R;
-import com.expense.interceptor.AuthorizationInterceptor;
 import com.expense.model.Group;
-import com.expense.service.GroupService;
 import com.expense.setting.AuthenticationManager;
+import com.google.gson.Gson;
 
 import java.io.IOException;
 
-import okhttp3.Interceptor;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
+import okhttp3.RequestBody;
 
 public class GroupActivity extends AppCompatActivity {
 
@@ -54,6 +49,11 @@ public class GroupActivity extends AppCompatActivity {
             Intent signInIntent = new Intent(getApplicationContext(), SignInActivity.class);
             startActivity(signInIntent);
             finish();
+        }
+
+        if (android.os.Build.VERSION.SDK_INT > 9) {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
         }
 
         progress = new ProgressDialog(this);
@@ -95,48 +95,39 @@ public class GroupActivity extends AppCompatActivity {
     }
 
     public void saveGroup() {
-        /*
+
         displayLoading("Wait while we create the group...");
 
-        OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(new AuthorizationInterceptor("client", "123"))
-                .build();
+        OkHttpClient client = new OkHttpClient();
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://10.0.2.2:8080/") // Cannot be localhost due to the virtual machine
-                .addConverterFactory(JacksonConverterFactory.create())
-                .build();
+        Gson gson = new Gson();
 
-        GroupService groupService = retrofit.create(GroupService.class);
-
-        Call<Void> httpRequest = groupService.create(new Group(
+        MediaType mediaType = MediaType.parse("application/json");
+        RequestBody body = RequestBody.create(mediaType, gson.toJson(new Group(
                 groupNameInput.getText().toString(),
                 groupDescriptionInput.getText().toString()
-        ));
+        )));
+        Request request = new Request.Builder()
+                .url("http://10.0.2.2:8080/api/group")
+                .post(body)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer " + authentication.getToken().getAccessToken())
+                .addHeader("cache-control", "no-cache")
+                //.addHeader("Postman-Token", "bea0be33-3cf1-47cd-b48c-8f030990b52f")
+                .build();
 
-        // Asynchronous request to create the informed group
-        httpRequest.enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call call, Response response) {
-                dismissLoading();
-                if (response.isSuccessful()) {
-                    Toast.makeText(getApplicationContext(),
-                            "Group successfully created.", Toast.LENGTH_LONG).show();
-                    finish(); // Return to the Main activity
-                } else {
-                    Toast.makeText(getApplicationContext(),
-                            "Error in the group creation.", Toast.LENGTH_LONG).show();
-                }
-            }
+        try {
+            client.newCall(request).execute();
+            Toast.makeText(getApplicationContext(),
+                    "Group successfully created.", Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(),
+                    "Error in the group creation.", Toast.LENGTH_LONG).show();
+        }
 
-            @Override
-            public void onFailure(Call call, Throwable t) {
-                dismissLoading();
-                Toast.makeText(getApplicationContext(),
-                        "Error in the group creation.", Toast.LENGTH_LONG).show();
-            }
-        });
-        */
+        dismissLoading();
+        finish(); // Return to the Main activity
 
     }
 
