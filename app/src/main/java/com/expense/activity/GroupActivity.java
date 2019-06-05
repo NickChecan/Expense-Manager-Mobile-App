@@ -36,6 +36,10 @@ public class GroupActivity extends AppCompatActivity {
 
     private ProgressDialog progress;
 
+    private Group selectedGroup;
+
+    private Gson gson = new Gson();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,9 +72,25 @@ public class GroupActivity extends AppCompatActivity {
         createGroupButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveGroup();
+                if (createGroupButton.getText().equals("CREATE")) {
+                    saveGroup();
+                } else {
+                    updateGroup();
+                }
+                dismissLoading();
+                finish(); // Return to the Main activity
             }
         });
+
+        selectedGroup = (Group) getIntent().getSerializableExtra("Group");
+
+        if (selectedGroup != null) {
+            groupNameInput.setText(selectedGroup.getName());
+            groupDescriptionInput.setText(selectedGroup.getDescription());
+            createGroupButton.setText("UPDATE");
+        } else {
+            createGroupButton.setText("CREATE");
+        }
 
     }
 
@@ -82,12 +102,23 @@ public class GroupActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onPrepareOptionsMenu (Menu menu) {
+        if (createGroupButton.getText().equals("CREATE")) {
+            menu.findItem(R.id.deleteGroupButtonId).setVisible(false).setEnabled(false);
+        } else {
+            menu.findItem(R.id.deleteGroupButtonId).setVisible(true).setEnabled(true);
+        }
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
                 finish();
                 return true;
             case R.id.deleteGroupButtonId:
+                deleteGroup();
                 finish();
                 return true;
         }
@@ -100,8 +131,6 @@ public class GroupActivity extends AppCompatActivity {
 
         OkHttpClient client = new OkHttpClient();
 
-        Gson gson = new Gson();
-
         MediaType mediaType = MediaType.parse("application/json");
         RequestBody body = RequestBody.create(mediaType, gson.toJson(new Group(
                 groupNameInput.getText().toString(),
@@ -113,7 +142,6 @@ public class GroupActivity extends AppCompatActivity {
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Authorization", "Bearer " + authentication.getToken().getAccessToken())
                 .addHeader("cache-control", "no-cache")
-                //.addHeader("Postman-Token", "bea0be33-3cf1-47cd-b48c-8f030990b52f")
                 .build();
 
         try {
@@ -126,8 +154,59 @@ public class GroupActivity extends AppCompatActivity {
                     "Error in the group creation.", Toast.LENGTH_LONG).show();
         }
 
-        dismissLoading();
-        finish(); // Return to the Main activity
+    }
+
+    public void updateGroup() {
+
+        displayLoading("Wait while we update the group...");
+
+        selectedGroup.setName(groupNameInput.getText().toString());
+        selectedGroup.setDescription(groupDescriptionInput.getText().toString());
+
+        OkHttpClient client = new OkHttpClient();
+
+        MediaType mediaType = MediaType.parse("application/json");
+        RequestBody body = RequestBody.create(mediaType, gson.toJson(selectedGroup));
+        Request request = new Request.Builder()
+                .url("http://10.0.2.2:8080/api/group/" + selectedGroup.getId())
+                .put(body)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer " + authentication.getToken().getAccessToken())
+                .addHeader("cache-control", "no-cache")
+                .build();
+
+        try {
+            client.newCall(request).execute();
+            Toast.makeText(getApplicationContext(),
+                    "The selected group was updated.", Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(),
+                    "Error in the group update operation.", Toast.LENGTH_LONG).show();
+        }
+
+    }
+
+    public void deleteGroup() {
+
+        OkHttpClient client = new OkHttpClient();
+
+        Request request = new Request.Builder()
+                .url("http://10.0.2.2:8080/api/group/" + selectedGroup.getId())
+                .delete(null)
+                .addHeader("Authorization", "Bearer" + authentication.getToken().getAccessToken())
+                .addHeader("cache-control", "no-cache")
+                .build();
+
+        try {
+            client.newCall(request).execute();
+            Toast.makeText(getApplicationContext(),
+                    "The group was deleted.", Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(),
+                    "Error in the group deletion.", Toast.LENGTH_LONG).show();
+        }
 
     }
 

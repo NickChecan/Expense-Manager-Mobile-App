@@ -23,8 +23,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -32,9 +31,9 @@ import okhttp3.Response;
 
 public class GroupFragment extends Fragment {
 
-    private ListView groupListView;
+    private ArrayList<Group> groupsList = new ArrayList<>();
 
-    private String[] items = {};
+    private ListView groupListView;
 
     FloatingActionButton addGroupFloatingButton;
 
@@ -68,35 +67,6 @@ public class GroupFragment extends Fragment {
 
         addGroupFloatingButton = rootView.findViewById(R.id.addGroupFloatingButton);
 
-        //items = getItems();
-
-        /*
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-                rootView.getContext(),
-                android.R.layout.simple_list_item_1,
-                android.R.id.text1,
-                items
-        );
-
-
-        adapter = new ArrayAdapter<String>(
-                rootView.getContext(),
-                android.R.layout.simple_list_item_1,
-                android.R.id.text1,
-                items
-        );
-
-        groupListView.setAdapter(adapter);
-
-        this.groupListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String selectedItem = items[position];
-                Toast.makeText(rootView.getContext(),
-                        selectedItem, Toast.LENGTH_SHORT).show();
-            }
-        });
-           */
         addGroupFloatingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -110,45 +80,36 @@ public class GroupFragment extends Fragment {
     }
 
     @Override
-    public void onResume() {
-
-        items = getItems();
-
-        if (adapter == null) {
-            adapter = new ArrayAdapter<String>(
-                    getContext(),
-                    android.R.layout.simple_list_item_1,
-                    android.R.id.text1,
-                    items
-            );
-
-            groupListView.setAdapter(adapter);
-
-            this.groupListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    String selectedItem = items[position];
-                    Toast.makeText(getContext(),
-                            selectedItem, Toast.LENGTH_SHORT).show();
-                }
-            });
-        } else {
-            adapter.notifyDataSetChanged();
-            groupListView.invalidateViews();
-            groupListView.refreshDrawableState();
-        }
-
-
-        super.onResume();
-    }
-
-    @Override
     public void onStart() {
-        System.out.println("------------------------------ test");
+        getGroups();
+
+        adapter = new ArrayAdapter<String>(
+            getContext(),
+            android.R.layout.simple_list_item_1,
+            android.R.id.text1,
+            getGroupsList()
+        );
+
+        groupListView.setAdapter(adapter);
+
+        this.groupListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Group selectedGroup = groupsList.get(position);
+
+                Intent groupIntent = new Intent(getActivity(), GroupActivity.class);
+                groupIntent.putExtra("Group", selectedGroup);
+                startActivity(groupIntent);
+
+            }
+        });
+
         super.onStart();
     }
 
-    public String[] getItems() {
+    private void getGroups() {
+
+        groupsList.clear();
 
         OkHttpClient client = new OkHttpClient();
 
@@ -165,27 +126,35 @@ public class GroupFragment extends Fragment {
             try {
                 JSONArray jsonData = new JSONArray(response.body().string());
 
-                String[] selectedItems = new String[jsonData.length()];
-
                 for (int index = 0; index < jsonData.length(); index++) {
                     JSONObject jsonObject = jsonData.getJSONObject(index);
-                    selectedItems [index] = jsonObject.getString("name");
+                    Group newGroup = new Group(
+                            jsonObject.getString("id"),
+                            jsonObject.getString("name"),
+                            jsonObject.getString("description")
+                    );
+                    groupsList.add(newGroup);
                 }
-
-                return selectedItems;
-
 
             } catch (JSONException e) {
                 e.printStackTrace();
-                return null;
             }
 
 
         } catch (IOException e) {
             e.printStackTrace();
-            return null;
         }
 
+    }
+
+    private String[] getGroupsList() {
+        String[] items = new String[groupsList.size()];
+        int index = 0;
+        for (Group group: groupsList) {
+            items[index] = group.getName();
+            index++;
+        }
+        return items;
     }
 
 }
